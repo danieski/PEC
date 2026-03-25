@@ -4,9 +4,11 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Iterator;
 import java.util.StringTokenizer;
 
 import es.uned.lsi.eped.DataStructures.IteratorIF;
+import es.uned.lsi.eped.DataStructures.List;
 import es.uned.lsi.eped.DataStructures.Sequence;
 
 public class Main {
@@ -83,16 +85,42 @@ public class Main {
     }
 
     public static void main(String[] args) throws IOException {
-        System.out.println("Test");
-        Pair_S_F parStringFrecuencia = new Pair_S_F("Dani",1);
-        parStringFrecuencia.getString();
-        parStringFrecuencia.getFrequency();
-        parStringFrecuencia.incFrequency();
-        System.out.println(parStringFrecuencia.toString());
-        Seq_PSF SequencePairSringFrequency = new Seq_PSF();
 
-        SequencePairSringFrequency.add(parStringFrecuencia);
-        System.out.println(SequencePairSringFrequency.size());
-        System.out.println(SequencePairSringFrequency.isEmpty());
+        System.out.println("Test");
+
+
+        IndexSequence indexSeq = new IndexSequence();
+        indexSeq.insertIndex("Dulcina","Cap09",2);
+        indexSeq.insertIndex("Quijote","Cap09",1);
+        indexSeq.insertIndex("Dul","Cap08",1);
+        indexSeq.insertIndex("Quijote","Cap08",1);
+        indexSeq.insertIndex("Da","Cap08",2);
+        indexSeq.insertIndex("Dz","Cap08",2);
+        indexSeq.insertIndex("Dx","Cap08",2);
+
+        IteratorIF<Pair_S_F> itaux = indexSeq.retrieveIndex("Dulcinea").iterator();
+        System.out.print("Dulcinea :" );
+        while( itaux.hasNext() ){
+            System.out.print(" "+itaux.getNext().toString());
+        }
+        IteratorIF<Pair_S_F> itaux1 = indexSeq.retrieveIndex("Dulce").iterator();
+        System.out.println(" ");
+        System.out.print("Dulce :");
+        while( itaux1.hasNext() ){
+            System.out.print(" " +itaux1.getNext().toString());
+        }
+        IteratorIF<Pair_S_F> itaux2 = indexSeq.retrieveIndex("Quijote").iterator();
+        System.out.println(" ");
+        System.out.print("Quijote :");
+        while( itaux2.hasNext() ){
+            System.out.print(" " + itaux2.getNext().toString());
+        }
+
+        IteratorIF<Pair_W_SeqPSF> itSort = indexSeq.prefixIterator("D");
+        while(itSort.hasNext()){
+            System.out.print(" " + itSort.getNext().getWord());
+        }
+        //System.out.println(palabraSecuencia.toString(   ));
+
     }
 }
