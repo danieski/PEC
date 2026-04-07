@@ -16,6 +16,7 @@ public class IndexSequence implements IndexIF {
 
     @Override
     public Seq_PSF retrieveIndex(String p) {
+
         IteratorIF<Pair_W_SeqPSF> it = index.iterator();
         //Bucle al indice
         while (it.hasNext()) {
@@ -37,7 +38,9 @@ public class IndexSequence implements IndexIF {
         //Comprobamos si la palabra ya existe en el indice
         //NO ESTA PERMITIDO INTRODUCIR DOC_ID QUE YA ESTE EN EL INDICE
         //Si existe p añadimos Pair W SeqPSF al final
+
         IteratorIF<Pair_W_SeqPSF> it = index.iterator();
+        //Revisar esta linea podria ser inecesaria
         while (it.hasNext()) {
             Pair_W_SeqPSF par = it.getNext();
             if(par.getWord().equals(p)){
@@ -49,7 +52,7 @@ public class IndexSequence implements IndexIF {
         //Creo el nuevo par
         Pair_W_SeqPSF parPSeq = new Pair_W_SeqPSF(p);
         //Le añado un par a la lista
-        parPSeq.add(doc_id,freq); //Aqui se comprueba si es repetido inc frecuencia
+        parPSeq.add(doc_id,freq);
         indexList.insert(indexList.size()+1,parPSeq);
         index=indexList;
 
@@ -58,63 +61,37 @@ public class IndexSequence implements IndexIF {
     @Override
     public IteratorIF<Pair_W_SeqPSF> prefixIterator(String prefix) {
 
-        //No devielve la lista ordenada
         //Recorremos la lista aquellas palabras que que empiezan por prefix seran agragadas a un indice
         List<Pair_W_SeqPSF> indexListAux = new List<Pair_W_SeqPSF>();
-        //Recorro la lista
 
+        //Recorro la lista
         IteratorIF<Pair_W_SeqPSF> it = index.iterator();
         while(it.hasNext()) {
             Pair_W_SeqPSF target = it.getNext();
             if (target.getWord().startsWith(prefix)) {
+                //Agrego las coincidencias en una lista auxiliar
                 indexListAux.insert(indexListAux.size() + 1, target);
             }
         }
+
         //Ordenador por orden alfabetico
-        int pos = 0;
-        int targetBpos = 0;
         for(int i = 1; i<= indexListAux.size(); i++) {
 
             for (int j = 1; j < indexListAux.size(); j++) {
 
                 Pair_W_SeqPSF pairA = indexListAux.get(j);
                 Pair_W_SeqPSF pairB = indexListAux.get(j + 1);
-
-                if (pairA.getWord().compareTo(pairB.getWord()) > 0) {
-                    indexListAux.remove(j + 1);
-                    indexListAux.insert(j, pairB);
+                //Obtengo par A y B su siguiente
+                if (pairA.getWord().compareTo(pairB.getWord()) > 0) { //Si esto da > 0 significa que el orden es incorrecto
+                    indexListAux.remove(j + 1); //Borro posicion B
+                    indexListAux.insert(j, pairB); //Inserto ParB en posicion A
                 }
 
             }
 
         }
         return indexListAux.iterator();
-        /*
-        while(targetBpos<indexListAux.size()){
 
-            pos += 1;
-
-            //Pillamos el primer element
-            int targetApos = pos;
-            Pair_W_SeqPSF pairA = indexListAux.get(targetApos);
-
-
-            //Pillamos el elemento de despues
-            targetBpos = pos + 1;
-            Pair_W_SeqPSF pairB = indexListAux.get(targetBpos);
-
-
-            if(pairA.getWord().compareTo(pairB.getWord()) > 0){//Si el elemento de despues va antes
-                //Intercambiamos
-                Pair_W_SeqPSF auxC = pairA; //Guardamos el elemento de despues
-                indexListAux.insert(targetApos, pairB); //Insertamos el elemento de despues en la posicion del elemento de antes
-                indexListAux.remove(targetBpos+1);
-                pos=0;
-
-            }
-        }
-
-        */
 
     }
 }

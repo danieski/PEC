@@ -31,17 +31,13 @@ public class ProcessDoc {
             //Si el <id_doc> coincide aumentamos la frecuencia
 
             if(pairAux.getString().equals(w)){
-                //System.out.println("Se repite la cadena: " + w);
                 //Aumentamos la frecuencia
                 pairAux.incFrequency();
-
-
                 return;
             }
         }
 
-        //En el caso
-        //Se añade elementos a la lista auxiliar
+        //Se añade elementos a la lista
 
         Pair_S_F targetPair = new Pair_S_F(w, 1);
         words.add(targetPair);

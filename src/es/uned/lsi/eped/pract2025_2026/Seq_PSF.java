@@ -23,13 +23,9 @@ public class Seq_PSF {
     public void add(Pair_S_F pair) {
         //Hay que comprobar que si se repite la cadena
         //Se incrementa la frecuancia
-
-
         seqStringFreqList.insert(seqStringFreqList.size()+1,pair);
         //La lista auxiliar se copia en la secuencia
         this.seqStringFreq = seqStringFreqList;
-        //System.out.println("Sequencia principal: " + seqStringFreq.toString() + "tamaño: " + seqStringFreq.size());
-        //System.out.println("Lista auxiliar: " + seqStringFreqList.toString() + "tamaño: " + seqStringFreqList.size());
 
     }
 }
