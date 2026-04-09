@@ -13,10 +13,12 @@ public class IndexTree implements IndexIF {
         index = new GTree<Node>();
         index.setRoot(new NodeRoot());
     }
-    public IteratorIF<Node> testIterator(){
+
+    public IteratorIF<Node> testIterator() {
         return index.iterator(PREORDER);
     }
-    private Queue<Character> characterQueueMaker(String word){
+
+    private Queue<Character> characterQueueMaker(String word) {
         char[] arrayPalabra = word.toCharArray();
         // Creamos la cola de lettras
         Queue<Character> characterQueue = new Queue<Character>();
@@ -25,6 +27,7 @@ public class IndexTree implements IndexIF {
         }
         return characterQueue;
     }
+
     private Seq_PSF findSequence(GTreeIF<Node> actualBranch, Queue<Character> characterQueue) {
 
         // Acabamos cuando la cola esta vacia
@@ -40,7 +43,6 @@ public class IndexTree implements IndexIF {
                 }
             }
             // Si no hay hijo INFO, la palabra no estaba completa en el indice
-            System.out.println("Palabra no encontrada (sin nodo INFO)");
             return new Seq_PSF();
         }
 
@@ -55,7 +57,8 @@ public class IndexTree implements IndexIF {
             GTreeIF<Node> targetBranch = (GTreeIF<Node>) itChildren.getNext();
 
             // Si el hijo es un nodo INFO (fin de otra palabra mas corta), lo saltamos.
-            // Ej: buscando "casamiento" y el nodo 'a' tiene hijo INFO (de "casa") + hijo 'm'
+            // Ej: buscando "casamiento" y el nodo 'a' tiene hijo INFO (de "casa") + hijo
+            // 'm'
             if (targetBranch.getRoot().getNodeType() != Node.NodeType.INNER) {
                 continue;
             }
@@ -64,7 +67,6 @@ public class IndexTree implements IndexIF {
 
             // Recorriendo la lista si alguno de los caracteres coincide.
             if (characterQueue.getFirst() == targetNode.getLetter()) {
-                System.out.println("Caracter encontrado: " + targetNode.getLetter());
                 // Borramos el caracter
                 characterQueue.dequeue();
                 // Buscamos en la siguiente
@@ -73,13 +75,13 @@ public class IndexTree implements IndexIF {
 
         }
 
-        //Si termina el bucle es que no ha encontrado camino
-        System.out.println("No se ha encontrado la palabra: ");
+        // Si termina el bucle es que no ha encontrado camino
         return new Seq_PSF();
     }
+
     @Override
     public Seq_PSF retrieveIndex(String p) {
-        return findSequence(index,characterQueueMaker(p));
+        return findSequence(index, characterQueueMaker(p));
     }
 
     private void addLetter(Queue<Character> characterQueue, GTreeIF<Node> actualBranch, String doc_id, int freq) {
@@ -89,7 +91,19 @@ public class IndexTree implements IndexIF {
         // Node
 
         if (characterQueue.isEmpty()) {
-            // La hoja es una secuencia de pares
+            //Hay que comprobar que no hay ningun nodo info en esa rama
+            ListIF<GTreeIF<Node>> actualBranchChildren = actualBranch.getChildren();
+            IteratorIF itActualBranch = actualBranchChildren.iterator();
+            while(itActualBranch.hasNext()){
+                GTreeIF<Node> actualChild = (GTreeIF<Node>) itActualBranch.getNext();
+                if(actualChild.getRoot() instanceof NodeInfo){
+                    NodeInfo oldNodeInfo = (NodeInfo) actualChild.getRoot();
+                    oldNodeInfo.getSeqPSR().add(new Pair_S_F(doc_id, freq));
+                    return;
+                }
+            }
+
+            //Al quedarnos sin letras insertamos un nodo tipo INFO sabiendo que es el unico de la rama tenemos que crear el nuevo
             GTree<Node> branchInfo = new GTree<Node>(); // Creamos el ultimo
             branchInfo.setRoot(new NodeInfo(new Pair_S_F(doc_id, freq))); // Le agregamos la secuencia de pares
             int pos = actualBranch.getNumChildren() + 1;
@@ -138,7 +152,6 @@ public class IndexTree implements IndexIF {
                 NodeInner innerNode = (NodeInner) targetBranch.getRoot();
 
                 if (innerNode.getLetter() == actualCharacter) {
-                    System.out.println("Coincide con: " + actualCharacter);
                     // Hay coincidencia! Quitamos la letra de la cola y avanzamos recursivamente
                     characterQueue.dequeue();
                     checkBranch(targetBranch, characterQueue, doc_id, freq);
@@ -154,33 +167,137 @@ public class IndexTree implements IndexIF {
 
     @Override
     public void insertIndex(String p, String doc_id, int freq) {
-        System.out.println("Analizando " + p);
+
         checkBranch(index, characterQueueMaker(p), doc_id, freq);
 
     }
-    private void auxPrefix(ListIF<GTreeIF<Node>> listTree){
-        
+
+    /**
+     * Recorre recursivamente el subárbol acumulando la palabra carácter a carácter.
+     * Cuando encuentra un nodo INFO, guarda el par (palabra, secuencia) en la
+     * lista.
+     * 
+     * @param tree      subárbol actual a explorar
+     * @param wordSoFar palabra construida hasta llegar a este nodo (sin incluir su
+     *                  raíz)
+     * @param result    lista donde se almacenan los resultados
+     */
+    private void collectWords(GTreeIF<Node> tree, String wordSoFar, List<Pair_W_SeqPSF> result) {
+        Node root = tree.getRoot();
+
+        //TODO Solucionar el problema de que cuando es una palabra suelta "esta" no la coge
+        if (root.getNodeType() == Node.NodeType.INFO) {
+            NodeInfo nodeInfo = (NodeInfo) root;
+            result.insert(result.size()+1, new Pair_W_SeqPSF(wordSoFar, nodeInfo.getSeqPSR()));
+        }
+
+        if (root.getNodeType() == Node.NodeType.INNER) {
+            // Nodo interior: añadimos su letra a la palabra
+            NodeInner innerNode = (NodeInner) root;
+            wordSoFar = wordSoFar + innerNode.getLetter();
+        }
+
+        // Recorremos los hijos: fusionamos todos los NodeInfo en un solo Pair_W_SeqPSF
+        // y recursamos en los INNER
+        ListIF<GTreeIF<Node>> children = tree.getChildren();
+        IteratorIF<GTreeIF<Node>> it = children.iterator();
+
+        // Primera pasada: fusionar todos los NodeInfo hijos en un único par
+        Pair_W_SeqPSF mergedPair = null;
+        while (it.hasNext()) {
+            GTreeIF<Node> child = it.getNext();
+            if (child.getRoot().getNodeType() == Node.NodeType.INFO) {
+                NodeInfo infoNode = (NodeInfo) child.getRoot();
+                if (mergedPair == null) {
+                    mergedPair = new Pair_W_SeqPSF(wordSoFar);
+                }
+                // Añadimos cada par (doc,freq) de este NodeInfo al par fusionado
+                IteratorIF<Pair_S_F> pairIt = infoNode.getSeqPSR().iterator();
+                while (pairIt.hasNext()) {
+                    Pair_S_F pair = pairIt.getNext();
+                    mergedPair.add(pair.getString(), pair.getFrequency());
+                }
+            }
+        }
+        if (mergedPair != null) {
+            result.insert(result.size() + 1, mergedPair);
+        }
+
+        // Segunda pasada: recursar en los hijos INNER
+        it = children.iterator();
+        while (it.hasNext()) {
+            GTreeIF<Node> child = it.getNext();
+            if (child.getRoot().getNodeType() == Node.NodeType.INNER) {
+                collectWords(child, wordSoFar, result);
+            }
+        }
+    }
+
+    private void auxPrefix(GTreeIF<Node> actualTree, Queue<Character> characterQueue, List<Pair_W_SeqPSF> nodeInfoList,
+            String wordSoFar) {
+
+        // Caso: ya consumimos el prefijo → recoger todas las palabras del subárbol
+        if (characterQueue.isEmpty()) {
+            // Iteramos los HIJOS de actualTree: su raíz ya está representada en wordSoFar
+            ListIF<GTreeIF<Node>> children = actualTree.getChildren();
+            IteratorIF<GTreeIF<Node>> it = children.iterator();
+            while (it.hasNext()) {
+                collectWords(it.getNext(), wordSoFar, nodeInfoList);
+            }
+            return;
+        }
+
+        // Aún quedan caracteres del prefijo: buscar el hijo cuya letra coincida
+        char actualCharacter = characterQueue.getFirst();
+        ListIF<GTreeIF<Node>> rootChildren = actualTree.getChildren();
+        IteratorIF<GTreeIF<Node>> itRootChildren = rootChildren.iterator();
+
+        // Recorreremos los hijos por si alguno coincide con el caracter actual
+        while (itRootChildren.hasNext()) {
+
+            // Analizamos cada hijo del arbol actual
+            GTreeIF<Node> targetBranch = itRootChildren.getNext();
+            Node actualNode = targetBranch.getRoot();
+
+            // Si su nodo es interno podremos analizar su caracter
+            if (actualNode.getNodeType() == Node.NodeType.INNER) {
+                NodeInner nodeInner = (NodeInner) actualNode;
+
+                if (nodeInner.getLetter() == actualCharacter) {
+                    // Coincidencia: consumir la letra y descender al sub-árbol hijo
+                    characterQueue.dequeue();
+                    auxPrefix(targetBranch, characterQueue, nodeInfoList, wordSoFar + actualCharacter);
+                    return; // Solo puede haber un hijo con esa letra
+                }
+            }
+        }
+        // Si ningún hijo coincide, el prefijo no existe en el índice → no se añade nada
     }
 
     @Override
     public IteratorIF<Pair_W_SeqPSF> prefixIterator(String prefix) {
-        Queue characterQueue = characterQueueMaker(prefix);
-        ListIF<GTreeIF<Node>> rootChildren = index.getChildren();
-        IteratorIF<GTreeIF<Node>> itRootChildren = rootChildren.iterator();
 
+        Queue<Character> characterQueue = characterQueueMaker(prefix);
+        List<Pair_W_SeqPSF> result = new List<Pair_W_SeqPSF>();
+        auxPrefix(index, characterQueue, result, "");
 
-        while(itRootChildren.hasNext()){
+        // Ordenador por orden alfabetico
+        for (int i = 0; i <= result.size(); i++) {
 
-            GTreeIF actualTree = itRootChildren.getNext();
+            for (int j = 0; j < result.size(); j++) {
 
-            if(characterQueue.getFirst() == actualTree.getRoot()){
-                characterQueue.dequeue();
-                auxPrefix(actualTree.getChildren());
+                Pair_W_SeqPSF pairA = result.get(j);
+                Pair_W_SeqPSF pairB = result.get(j + 1);
+                // Obtengo par A y B su siguiente
+                if (pairA.getWord().compareTo(pairB.getWord()) > 0) { // Si esto da > 0 significa que el orden es
+                                                                      // incorrecto
+                    result.remove(j + 1); // Borro posicion B
+                    result.insert(j, pairB); // Inserto ParB en posicion A
+                }
+
             }
 
-
         }
-
-        return null;
+        return result.iterator();
     }
 }

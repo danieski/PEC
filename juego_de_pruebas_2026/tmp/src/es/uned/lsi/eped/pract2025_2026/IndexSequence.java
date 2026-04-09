@@ -48,7 +48,7 @@ public class IndexSequence implements IndexIF {
                 return;
             }
         }
-
+        //Si no existe la palabra en el indice interto la nueva palabra
         //Creo el nuevo par
         Pair_W_SeqPSF parPSeq = new Pair_W_SeqPSF(p);
         //Le añado un par a la lista
@@ -61,7 +61,7 @@ public class IndexSequence implements IndexIF {
     @Override
     public IteratorIF<Pair_W_SeqPSF> prefixIterator(String prefix) {
 
-        //Recorremos la lista aquellas palabras que que empiezan por prefix seran agragadas a un indice
+        //Recorremos la lista aquellas palabras que que empiezan por prefix seran agregadas a un indice
         List<Pair_W_SeqPSF> indexListAux = new List<Pair_W_SeqPSF>();
 
         //Recorro la lista

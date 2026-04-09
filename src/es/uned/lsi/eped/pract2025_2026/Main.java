@@ -101,32 +101,9 @@ public class Main {
         indexTree.insertIndex("casa", "okidoky", 1);
         indexTree.insertIndex("casamiento", "doc2", 1);
 
-        IteratorIF<Pair_S_F> tacus = indexTree.retrieveIndex("casa").iterator();
-        System.out.println(tacus.getNext().toString());
-        IteratorIF<Pair_S_F> tacus1 = indexTree.retrieveIndex("casamo").iterator();
-        if (tacus1.hasNext()) {
-            System.out.println(tacus1.getNext().toString());
-        } else {
-            System.out.println("'casamo' no esta en el indice");
+        IteratorIF<Pair_W_SeqPSF> diosFunciona = indexTree.prefixIterator("dul");
+        while (diosFunciona.hasNext()) {
+            System.out.println(diosFunciona.getNext().toString());
         }
-        IteratorIF<Node> it = indexTree.testIterator();
-
-        while(it.hasNext()){
-            Node node = it.getNext();
-            if(node instanceof NodeInner) {
-                NodeInner nodeInner = (NodeInner) node;
-                System.out.println(nodeInner.getLetter());
-            }
-            if(node instanceof NodeInfo){
-                NodeInfo nodeInfo = (NodeInfo) node;
-                IteratorIF<Pair_S_F> psf = nodeInfo.getSeqPSR().iterator();
-                while(psf.hasNext()){
-                    System.out.println(psf.getNext().toString());
-                }
-
-            }
-
-        }
-
     }
 }
