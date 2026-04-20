@@ -9,13 +9,11 @@ public class ProcessDoc {
     String doc_id;
     Seq_PSF words;
 
-    /* Constructor */
     public ProcessDoc(String did) {
         this.doc_id = did;
         this.words = new Seq_PSF();
     }
 
-    /* Devuelve la secuencia de pares <palabra,frecuencia> */
     public Seq_PSF getSequence() {
         return this.words;
     }

@@ -2,8 +2,6 @@ package es.uned.lsi.eped.pract2025_2026;
 
 import es.uned.lsi.eped.DataStructures.*;
 
-import static es.uned.lsi.eped.DataStructures.GTreeIF.IteratorModes.PREORDER;
-
 public class IndexTree implements IndexIF {
 
     protected GTreeIF<Node> index;
@@ -14,10 +12,10 @@ public class IndexTree implements IndexIF {
         index.setRoot(new NodeRoot());
     }
 
-    public IteratorIF<Node> testIterator() {
-        return index.iterator(PREORDER);
-    }
-
+    /*
+    *Combierte un objeto string en una cola con los chars del string
+    *
+    * */
     private Queue<Character> characterQueueMaker(String word) {
         char[] arrayPalabra = word.toCharArray();
         // Creamos la cola de lettras
@@ -27,8 +25,21 @@ public class IndexTree implements IndexIF {
         }
         return characterQueue;
     }
-
-    private Seq_PSF findSequence(GTreeIF<Node> actualBranch, Queue<Character> characterQueue) {
+    /*
+    * Esta es la funcion recursiva que usaremos para encontrar el indice que estamos buscando
+    * Primero se identifica el caso base que es cuando la cola de letras esta vacia, devolveremos la
+    * secuencia asociada al nodo info de esa busqueda
+    *
+    * Recorriendo la lista de hijos que pasamos de forma recursiva comprobamos
+    *
+    * Si alguno coincide con la letra actual, si coincide descartamos la letra
+    * y hacemos una llamada recursiva poniendo como parametro los hijos
+    * del nodo que contiene el caracter.
+    *
+    * Si no coincide un caracter antes de terminar la palabra entonces la palabra completa
+    * no existe en el indice y se devolvera una secuencia vacia
+    * */
+    private Seq_PSF auxRetriveIndex(GTreeIF<Node> actualBranch, Queue<Character> characterQueue) {
 
         // Acabamos cuando la cola esta vacia
         if (characterQueue.isEmpty()) {
@@ -70,7 +81,7 @@ public class IndexTree implements IndexIF {
                 // Borramos el caracter
                 characterQueue.dequeue();
                 // Buscamos en la siguiente
-                return findSequence(targetBranch, characterQueue);
+                return auxRetriveIndex(targetBranch, characterQueue);
             }
 
         }
@@ -81,7 +92,8 @@ public class IndexTree implements IndexIF {
 
     @Override
     public Seq_PSF retrieveIndex(String p) {
-        return findSequence(index, characterQueueMaker(p));
+
+        return auxRetriveIndex(index, characterQueueMaker(p));
     }
 
     private void addLetter(Queue<Character> characterQueue, GTreeIF<Node> actualBranch, String doc_id, int freq) {
@@ -126,7 +138,7 @@ public class IndexTree implements IndexIF {
 
     }
 
-    private void checkBranch(GTreeIF<Node> actualBranch, Queue<Character> characterQueue, String doc_id, int freq) {
+    private void auxInsertIndex(GTreeIF<Node> actualBranch, Queue<Character> characterQueue, String doc_id, int freq) {
 
         // Caso Empty: Ya hemos consumido todos los caracteres de la palabra
         if (characterQueue.isEmpty()) {
@@ -154,7 +166,7 @@ public class IndexTree implements IndexIF {
                 if (innerNode.getLetter() == actualCharacter) {
                     // Hay coincidencia! Quitamos la letra de la cola y avanzamos recursivamente
                     characterQueue.dequeue();
-                    checkBranch(targetBranch, characterQueue, doc_id, freq);
+                    auxInsertIndex(targetBranch, characterQueue, doc_id, freq);
                     return; // Salimos, porque ya no tenemos que seguir buscando en otros hermanos
                 }
             }
@@ -168,7 +180,7 @@ public class IndexTree implements IndexIF {
     @Override
     public void insertIndex(String p, String doc_id, int freq) {
 
-        checkBranch(index, characterQueueMaker(p), doc_id, freq);
+        auxInsertIndex(index, characterQueueMaker(p), doc_id, freq);
 
     }
 
@@ -185,7 +197,7 @@ public class IndexTree implements IndexIF {
     private void collectWords(GTreeIF<Node> tree, String wordSoFar, List<Pair_W_SeqPSF> result) {
         Node root = tree.getRoot();
 
-        //TODO Solucionar el problema de que cuando es una palabra suelta "esta" no la coge
+
         if (root.getNodeType() == Node.NodeType.INFO) {
             NodeInfo nodeInfo = (NodeInfo) root;
             result.insert(result.size()+1, new Pair_W_SeqPSF(wordSoFar, nodeInfo.getSeqPSR()));

@@ -14,10 +14,10 @@ public class IndexTree implements IndexIF {
         index.setRoot(new NodeRoot());
     }
 
-    public IteratorIF<Node> testIterator() {
-        return index.iterator(PREORDER);
-    }
-
+    /*
+    *Obtiene un objeto del tipo string y devuelve un objeto de tipo cola
+    *
+    * */
     private Queue<Character> characterQueueMaker(String word) {
         char[] arrayPalabra = word.toCharArray();
         // Creamos la cola de lettras

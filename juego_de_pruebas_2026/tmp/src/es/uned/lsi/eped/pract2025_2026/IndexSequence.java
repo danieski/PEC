@@ -14,6 +14,13 @@ public class IndexSequence implements IndexIF {
         this.index = new List<Pair_W_SeqPSF>();
     }
 
+    /*
+    *Busqueda del indice
+    *Esta funcion recibira un string que buscara, como index es una secunencia tiene un iterador
+    *podemos recorrer en bucle el iterador hasta que encontremos p o si no encontramos nada al terminar
+    *de recorrer index devolvemos una secuencia nueva vacia
+     */
+
     @Override
     public Seq_PSF retrieveIndex(String p) {
 
@@ -32,11 +39,24 @@ public class IndexSequence implements IndexIF {
         }
         return new Seq_PSF() ;
     }
-
+    /*
+    *Inserccion en el indice
+    * @PRE: No esta permitido introducir un Doc_Id que ya esté asociada a una misma palabra.
+    *
+    *Para poder insertar nuevos datos en el indice vamos a primero comprobar que la palabra aun no esta insertada
+    *ya que cada palabra en el indice es unica. Si la palabra existe agregaremos al final de la secuencia
+    *asignada a la palabra el nuevo par.
+    *
+    * Si no existe la palabra vamos a crear una nueva secuencia, a esta nueva secuencia le agregamos un nuevo par
+    * llamando a su metodo add e insertandole los datos de parametro.
+    *
+    * Usamos una lista auxiliar indexList porque necesito usar el metodo insert y como viene indicado en la practica
+    * no podemos editar el codigo de index que es del tipo SequenceIF<Pair_W_SeqPSF>.
+    *
+     */
     @Override
     public void insertIndex(String p, String doc_id, int freq) {
         //Comprobamos si la palabra ya existe en el indice
-        //NO ESTA PERMITIDO INTRODUCIR DOC_ID QUE YA ESTE EN EL INDICE
         //Si existe p añadimos Pair W SeqPSF al final
 
         IteratorIF<Pair_W_SeqPSF> it = index.iterator();
@@ -57,7 +77,20 @@ public class IndexSequence implements IndexIF {
         index=indexList;
 
     }
-
+    /*
+     *Busqueda de prefijo
+     *
+     * @RETURN: El iterador de la lista auxiliar ordenada
+     *
+     * Esta funcion realiza una busqueda devolviendo un iterador de la lista ordenada que contiene las parabras que empiezan por
+     * este prefijo.
+     *
+     * Recorreremos el indice con su iterador buscando todas la palbras que empiecen por el prefijo, esto lo podemos
+     * hacer gracias a la funcion de los strings .startsWith() aquellas coincidencias las guardaremos en una lista desordenada.
+     * Una vez tengamos la lista llena de las coincidencias debemos ordenarla alfabeticamente.
+     *
+     * Para ordenarla alfabeticamente usamos bubble sort que compara la pos con la pos+1 si su orden no es correcto se intercambiaran
+     */
     @Override
     public IteratorIF<Pair_W_SeqPSF> prefixIterator(String prefix) {
 
