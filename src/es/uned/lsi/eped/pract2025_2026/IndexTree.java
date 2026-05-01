@@ -211,8 +211,6 @@ public class IndexTree implements IndexIF {
      */
     private void collectWords(GTreeIF<Node> tree, String wordSoFar, List<Pair_W_SeqPSF> result) {
         Node root = tree.getRoot();
-
-
         if (root.getNodeType() == Node.NodeType.INFO) {
             NodeInfo nodeInfo = (NodeInfo) root;
             result.insert(result.size()+1, new Pair_W_SeqPSF(wordSoFar, nodeInfo.getSeqPSR()));
@@ -262,7 +260,7 @@ public class IndexTree implements IndexIF {
     /**
     *auxPrefix
     *
-    *Busca todos los nodos que empiezan contienen la letra actual del prefijo que buscamos
+    *Busca todos los nodos que empiezan por la letra actual del prefijo que buscamos
     *Si la encuentra la descarta de la cola y busca en sus hijos haciendo una llamada recursiva
     *
     *En el caso base nos quedamos sin letras del prefijo a continuacion llamamos a la funcion collectWords

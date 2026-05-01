@@ -2,8 +2,6 @@ package es.uned.lsi.eped.pract2025_2026;
 
 import es.uned.lsi.eped.DataStructures.*;
 
-import static es.uned.lsi.eped.DataStructures.GTreeIF.IteratorModes.PREORDER;
-
 public class IndexTree implements IndexIF {
 
     protected GTreeIF<Node> index;
@@ -14,8 +12,8 @@ public class IndexTree implements IndexIF {
         index.setRoot(new NodeRoot());
     }
 
-    /*
-    *Obtiene un objeto del tipo string y devuelve un objeto de tipo cola
+    /**
+    *Combierte un objeto string en una cola con los chars del string
     *
     * */
     private Queue<Character> characterQueueMaker(String word) {
@@ -27,8 +25,21 @@ public class IndexTree implements IndexIF {
         }
         return characterQueue;
     }
-
-    private Seq_PSF findSequence(GTreeIF<Node> actualBranch, Queue<Character> characterQueue) {
+    /**
+    * Esta es la funcion recursiva que usaremos para encontrar el indice que estamos buscando
+    * Primero se identifica el caso base que es cuando la cola de letras esta vacia, devolveremos la
+    * secuencia asociada al nodo info de esa busqueda
+    *
+    * Recorriendo la lista de hijos que pasamos de forma recursiva comprobamos
+    *
+    * Si alguno coincide con la letra actual, descartamos la letra
+    * y hacemos una llamada recursiva poniendo como parametro los hijos
+    * del nodo que contiene el caracter.
+    *
+    * Si no coincide un caracter antes de terminar la palabra entonces la palabra completa
+    * no existe en el indice y se devolvera una secuencia vacia
+    * */
+    private Seq_PSF auxRetriveIndex(GTreeIF<Node> actualBranch, Queue<Character> characterQueue) {
 
         // Acabamos cuando la cola esta vacia
         if (characterQueue.isEmpty()) {
@@ -70,7 +81,7 @@ public class IndexTree implements IndexIF {
                 // Borramos el caracter
                 characterQueue.dequeue();
                 // Buscamos en la siguiente
-                return findSequence(targetBranch, characterQueue);
+                return auxRetriveIndex(targetBranch, characterQueue);
             }
 
         }
@@ -81,14 +92,25 @@ public class IndexTree implements IndexIF {
 
     @Override
     public Seq_PSF retrieveIndex(String p) {
-        return findSequence(index, characterQueueMaker(p));
-    }
 
+        return auxRetriveIndex(index, characterQueueMaker(p));
+    }
+    /**
+    * addLetter
+    *
+    * Funciona con una llamada recursiva junto con la funcion auxInsertIndex para agregar los nuevos hijos
+    * con sus correspondientes letras en su root.
+    *
+    * En su caso base al quedarnos sin letras que agragar creamos un NodeInfo que agrega los parametro doc_id y freq
+    *
+    * Se comprueba tambien si en ese ultimo hijo en el caso base no existe ningun NodeInfo, si lo hubiera
+    * no creamos un nuevo NodeInfo sino que agregamos la informacion del parametro al existente
+    *
+     */
     private void addLetter(Queue<Character> characterQueue, GTreeIF<Node> actualBranch, String doc_id, int freq) {
 
         GTree<Node> newBranch = new GTree<Node>();
-        // Excepcion cuando nos quedamos sin caracteres añadimos la branch con el Info
-        // Node
+        // Caso base: Nos quedamos sin caracteres añadimos la branch con el NodeInfo
 
         if (characterQueue.isEmpty()) {
             //Hay que comprobar que no hay ningun nodo info en esa rama
@@ -121,14 +143,23 @@ public class IndexTree implements IndexIF {
         actualBranch.addChild(positionNewBranch, newBranch);
         // Seteamos el root de la nueva rama
         newBranch.setRoot(new NodeInner(actualCharacter));
-        // Volvemos a llamar a la funcion para la nueva rama hasta quedarnos sin letras
+        // Llamada recursiva a la funcion con nueva rama como parametro hasta alcanzar caso base
         addLetter(characterQueue, newBranch, doc_id, freq);
 
     }
+    /**
+     *   auxInsertIndex
+     *
+     *   Esta funcion recibe una llamada recursiva en busca de aquellos hijos que tienen el caracter de la palabra
+     *   que insertamos, va a recorrer los hijos en busca de coincidencias para colgar la palabra que queremos introducir
+     *   habiendo descartado los caracteres que coincidian, para seguir la estructura de arbol Trie.
+     *
+     *   Llama a la funcion addLetter() que se llamara de forma recursiva para crear los nuevos hijos con sus correspondientes
+     *   letras y finalmente crear y agregar un NodeInfo con los parametros doc_id y freq.
+     */
+    private void auxInsertIndex(GTreeIF<Node> actualBranch, Queue<Character> characterQueue, String doc_id, int freq) {
 
-    private void checkBranch(GTreeIF<Node> actualBranch, Queue<Character> characterQueue, String doc_id, int freq) {
-
-        // Caso Empty: Ya hemos consumido todos los caracteres de la palabra
+        // Caso base: Ya hemos consumido todos los caracteres de la palabra
         if (characterQueue.isEmpty()) {
             // Llamamos a addLetter para que inserte el NodeInfo de fin de palabra
             addLetter(characterQueue, actualBranch, doc_id, freq);
@@ -140,9 +171,10 @@ public class IndexTree implements IndexIF {
 
         // Nos pasan una lista con los hijos de la branch
         ListIF<GTreeIF<Node>> listBranch = actualBranch.getChildren();
-        IteratorIF itBranch = listBranch.iterator(); // iterador de la lista
+        IteratorIF itBranch = listBranch.iterator();
 
-        while (itBranch.hasNext()) { // Recorremos
+        // Recorremos los hijos
+        while (itBranch.hasNext()) {
 
             // Obtenemos el arbol que vamos a analizar
             GTreeIF<Node> targetBranch = (GTreeIF<Node>) itBranch.getNext();
@@ -152,23 +184,23 @@ public class IndexTree implements IndexIF {
                 NodeInner innerNode = (NodeInner) targetBranch.getRoot();
 
                 if (innerNode.getLetter() == actualCharacter) {
-                    // Hay coincidencia! Quitamos la letra de la cola y avanzamos recursivamente
+                    // Hay coincidencia, desencolamos la letra de la cola y avanzamos recursivamente
                     characterQueue.dequeue();
-                    checkBranch(targetBranch, characterQueue, doc_id, freq);
+                    // El nodo que coincide con la letra se combierte en el nodo parametro
+                    auxInsertIndex(targetBranch, characterQueue, doc_id, freq);
                     return; // Salimos, porque ya no tenemos que seguir buscando en otros hermanos
                 }
             }
         }
 
-        // Si recorremos todos los hijos del arbol y ninguno coincide, agregamos una
-        // nueva rama.
+        // Si recorremos todos los hijos del arbol y ninguno coincide, agregamos una nueva rama.
         addLetter(characterQueue, actualBranch, doc_id, freq);
     }
 
     @Override
     public void insertIndex(String p, String doc_id, int freq) {
 
-        checkBranch(index, characterQueueMaker(p), doc_id, freq);
+        auxInsertIndex(index, characterQueueMaker(p), doc_id, freq);
 
     }
 
@@ -176,16 +208,9 @@ public class IndexTree implements IndexIF {
      * Recorre recursivamente el subárbol acumulando la palabra carácter a carácter.
      * Cuando encuentra un nodo INFO, guarda el par (palabra, secuencia) en la
      * lista.
-     * 
-     * @param tree      subárbol actual a explorar
-     * @param wordSoFar palabra construida hasta llegar a este nodo (sin incluir su
-     *                  raíz)
-     * @param result    lista donde se almacenan los resultados
      */
     private void collectWords(GTreeIF<Node> tree, String wordSoFar, List<Pair_W_SeqPSF> result) {
         Node root = tree.getRoot();
-
-        //TODO Solucionar el problema de que cuando es una palabra suelta "esta" no la coge
         if (root.getNodeType() == Node.NodeType.INFO) {
             NodeInfo nodeInfo = (NodeInfo) root;
             result.insert(result.size()+1, new Pair_W_SeqPSF(wordSoFar, nodeInfo.getSeqPSR()));
@@ -232,16 +257,27 @@ public class IndexTree implements IndexIF {
             }
         }
     }
-
+    /**
+    *auxPrefix
+    *
+    *Busca todos los nodos que empiezan por la letra actual del prefijo que buscamos
+    *Si la encuentra la descarta de la cola y busca en sus hijos haciendo una llamada recursiva
+    *
+    *En el caso base nos quedamos sin letras del prefijo a continuacion llamamos a la funcion collectWords
+    *recorriendo todos los arboloes de esos hijos, completando la palabra que forman y guardano sus IndoNodes
+    *en una lista para posteriormente ordenarla.
+    *
+     */
     private void auxPrefix(GTreeIF<Node> actualTree, Queue<Character> characterQueue, List<Pair_W_SeqPSF> nodeInfoList,
             String wordSoFar) {
 
-        // Caso: ya consumimos el prefijo → recoger todas las palabras del subárbol
+        // Caso base: ya consumimos el prefijo recoger todas las palabras del subárbol
         if (characterQueue.isEmpty()) {
             // Iteramos los HIJOS de actualTree: su raíz ya está representada en wordSoFar
             ListIF<GTreeIF<Node>> children = actualTree.getChildren();
             IteratorIF<GTreeIF<Node>> it = children.iterator();
             while (it.hasNext()) {
+                //Guardaremos todos sus InfoNodes dentro de una lista
                 collectWords(it.getNext(), wordSoFar, nodeInfoList);
             }
             return;
@@ -266,6 +302,7 @@ public class IndexTree implements IndexIF {
                 if (nodeInner.getLetter() == actualCharacter) {
                     // Coincidencia: consumir la letra y descender al sub-árbol hijo
                     characterQueue.dequeue();
+                    //El nodo que coincide con el caracter se combierte en el arbol parametro
                     auxPrefix(targetBranch, characterQueue, nodeInfoList, wordSoFar + actualCharacter);
                     return; // Solo puede haber un hijo con esa letra
                 }
@@ -273,7 +310,18 @@ public class IndexTree implements IndexIF {
         }
         // Si ningún hijo coincide, el prefijo no existe en el índice → no se añade nada
     }
-
+    /**
+    * prefixIterator
+    *
+    * Creamos una lista auxiliar que va a guardar los pares que son las palabras que empiezan por el prefijo
+    * a esta lista le hemos insertado los nodos info correspondientes a cada palabra.
+    *
+    * Al final ordenamos por medio de bubbl sort comparando la posicion actual con la contigua si estan desordenadas
+    * su posicion se intercambia.
+    *
+    * Finalmente llamamos al iterador de la lista auxiliar result para devolverlo.
+    *
+    * */
     @Override
     public IteratorIF<Pair_W_SeqPSF> prefixIterator(String prefix) {
 

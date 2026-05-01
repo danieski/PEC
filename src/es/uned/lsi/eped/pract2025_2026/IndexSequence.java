@@ -14,7 +14,7 @@ public class IndexSequence implements IndexIF {
         this.index = new List<Pair_W_SeqPSF>();
     }
 
-    /*
+    /**
     *Busqueda del indice
     *Esta funcion recibira un string que buscara, como index es una secunencia tiene un iterador
     *podemos recorrer en bucle el iterador hasta que encontremos p o si no encontramos nada al terminar
@@ -39,7 +39,7 @@ public class IndexSequence implements IndexIF {
         }
         return new Seq_PSF() ;
     }
-    /*
+    /**
     *Inserccion en el indice
     * @PRE: No esta permitido introducir un Doc_Id que ya esté asociada a una misma palabra.
     *
@@ -49,6 +49,9 @@ public class IndexSequence implements IndexIF {
     *
     * Si no existe la palabra vamos a crear una nueva secuencia, a esta nueva secuencia le agregamos un nuevo par
     * llamando a su metodo add e insertandole los datos de parametro.
+     *
+     *Comprobamos donde tiene que ser insertada la palabra respetando un orden alfabetico, recorriendo el indice
+     * para averiguar donde insertarlo correctamente
     *
     * Usamos una lista auxiliar indexList porque necesito usar el metodo insert y como viene indicado en la practica
     * no podemos editar el codigo de index que es del tipo SequenceIF<Pair_W_SeqPSF>.
@@ -60,7 +63,7 @@ public class IndexSequence implements IndexIF {
         //Si existe p añadimos Pair W SeqPSF al final
 
         IteratorIF<Pair_W_SeqPSF> it = index.iterator();
-        //Revisar esta linea podria ser inecesaria
+
         while (it.hasNext()) {
             Pair_W_SeqPSF par = it.getNext();
             if(par.getWord().equals(p)){
@@ -73,11 +76,29 @@ public class IndexSequence implements IndexIF {
         Pair_W_SeqPSF parPSeq = new Pair_W_SeqPSF(p);
         //Le añado un par a la lista
         parPSeq.add(doc_id,freq);
+
+        //insertamos la palabra respetando el orden alfabetico
+        IteratorIF<Pair_W_SeqPSF> itList = indexList.iterator();
+        int positionInsertion = 0; //Contador de posiciones
+        while(itList.hasNext()){
+            //Cada iteracion es una posicion mas
+            positionInsertion++;
+            Pair_W_SeqPSF pairA = itList.getNext();
+            //Si la palabra de la lista esta en orden incorrecto se inserta en la posicion donde el orden es incorrecto
+            if(pairA.getWord().compareTo(p)>0){
+                indexList.insert(positionInsertion,parPSeq);
+                index=indexList;
+                return;
+            }
+            //Si no continuo el bucle
+        }
+        //Si he completado el bucle y esta en orden lo inserto al final.
         indexList.insert(indexList.size()+1,parPSeq);
         index=indexList;
 
     }
-    /*
+
+    /**
      *Busqueda de prefijo
      *
      * @RETURN: El iterador de la lista auxiliar ordenada
@@ -87,9 +108,8 @@ public class IndexSequence implements IndexIF {
      *
      * Recorreremos el indice con su iterador buscando todas la palbras que empiecen por el prefijo, esto lo podemos
      * hacer gracias a la funcion de los strings .startsWith() aquellas coincidencias las guardaremos en una lista desordenada.
-     * Una vez tengamos la lista llena de las coincidencias debemos ordenarla alfabeticamente.
+     * Una vez tengamos la lista llena devolvemos su iterador
      *
-     * Para ordenarla alfabeticamente usamos bubble sort que compara la pos con la pos+1 si su orden no es correcto se intercambiaran
      */
     @Override
     public IteratorIF<Pair_W_SeqPSF> prefixIterator(String prefix) {
@@ -107,22 +127,6 @@ public class IndexSequence implements IndexIF {
             }
         }
 
-        //Ordenador por orden alfabetico
-        for(int i = 1; i<= indexListAux.size(); i++) {
-
-            for (int j = 1; j < indexListAux.size(); j++) {
-
-                Pair_W_SeqPSF pairA = indexListAux.get(j);
-                Pair_W_SeqPSF pairB = indexListAux.get(j + 1);
-                //Obtengo par A y B su siguiente
-                if (pairA.getWord().compareTo(pairB.getWord()) > 0) { //Si esto da > 0 significa que el orden es incorrecto
-                    indexListAux.remove(j + 1); //Borro posicion B
-                    indexListAux.insert(j, pairB); //Inserto ParB en posicion A
-                }
-
-            }
-
-        }
         return indexListAux.iterator();
 
 
